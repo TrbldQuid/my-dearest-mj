@@ -33,9 +33,10 @@ const Index = () => {
           </h1>
           
           <p className="sans-font text-lg md:text-xl mb-8 text-gray-700 animate-fade-in">
-            Every moment with you feels like a page from a fairytale. Your smile brightens my days,
-            and your love fills my heart with joy. Would you make this Valentine's Day extra special
-            by being mine?
+            My MJ,
+            It's been exactly 79 days since we started talking, 77 since we first met and shared our first kiss, but who's counting, right? Honestly, getting to know you has been one of the best parts of my days. And with Valentine's Day around the corner, I was wondering… would you make it even more special by being my valentine?
+
+            No pressure, just me, hoping to spend this year's valentine's with someone pretty amazing. 😊
           </p>
 
           <div className="space-y-4 md:space-y-0 md:space-x-4 animate-fade-in">
