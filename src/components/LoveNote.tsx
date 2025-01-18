@@ -2,18 +2,43 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from '@/lib/supabase';
 
 const LoveNote = () => {
   const [note, setNote] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = () => {
-    if (note.trim()) {
+  const handleSubmit = async () => {
+    if (!note.trim()) return;
+    
+    setIsSending(true);
+    try {
+      const { error } = await supabase
+        .from('love_notes')
+        .insert([
+          {
+            content: note.trim(),
+            response_type: 'yes'
+          }
+        ]);
+
+      if (error) throw error;
+
       toast({
         title: "Love Note Sent! ❤️",
         description: "Your message has been delivered with love",
       });
       setNote('');
+    } catch (error) {
+      console.error('Error sending note:', error);
+      toast({
+        title: "Oops!",
+        description: "Couldn't send your love note. Please try again!",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -29,8 +54,9 @@ const LoveNote = () => {
       <Button
         onClick={handleSubmit}
         className="w-full bg-pink-500 hover:bg-pink-600 text-white"
+        disabled={isSending}
       >
-        Send With Love
+        {isSending ? 'Sending...' : 'Send With Love'}
       </Button>
     </div>
   );

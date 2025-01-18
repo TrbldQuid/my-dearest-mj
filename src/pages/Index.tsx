@@ -1,24 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import FloatingHearts from "@/components/FloatingHearts";
 import LoveNote from "@/components/LoveNote";
 import confetti from 'canvas-confetti';
+import { supabase } from '@/lib/supabase';
+import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const [showNote, setShowNote] = useState(false);
   const [thinking, setThinking] = useState(false);
+  const { toast } = useToast();
 
-  const handleYes = () => {
+  useEffect(() => {
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('love_notes')
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'love_notes' },
+        (payload) => {
+          toast({
+            title: "New Love Note! 💌",
+            description: "Someone just responded to your Valentine's request!",
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
+
+  const handleYes = async () => {
     confetti({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 }
     });
-    setShowNote(true);
+    
+    try {
+      const { error } = await supabase
+        .from('love_notes')
+        .insert([
+          {
+            content: 'Said Yes! 💖',
+            response_type: 'yes'
+          }
+        ]);
+
+      if (error) throw error;
+      setShowNote(true);
+    } catch (error) {
+      console.error('Error recording response:', error);
+    }
   };
 
-  const handleThinking = () => {
+  const handleThinking = async () => {
     setThinking(true);
+    try {
+      await supabase
+        .from('love_notes')
+        .insert([
+          {
+            content: 'Still thinking... 🤔',
+            response_type: 'thinking'
+          }
+        ]);
+    } catch (error) {
+      console.error('Error recording response:', error);
+    }
     setTimeout(() => setThinking(false), 2000);
   };
 
