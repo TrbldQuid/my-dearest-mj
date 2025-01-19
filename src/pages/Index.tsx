@@ -10,7 +10,7 @@ import { LoveNote as LoveNoteType } from '@/lib/supabase';
 const Index = () => {
   const [showNote, setShowNote] = useState(false);
   const [thinking, setThinking] = useState(false);
-  const [response, setResponse] = useState<LoveNoteType | null>(null);
+  const [responses, setResponses] = useState<LoveNoteType[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -21,35 +21,33 @@ const Index = () => {
         { event: 'INSERT', schema: 'public', table: 'love_notes' },
         (payload) => {
           const newNote = payload.new as any;
-          // Validate response_type before setting state
           if (newNote.response_type === 'yes' || newNote.response_type === 'thinking') {
-            setResponse(newNote as LoveNoteType);
+            setResponses(prev => [...prev, newNote as LoveNoteType]);
             toast({
-              title: "She responded! 💌",
-              description: "Check her answer below!",
+              title: "New Response! 💌",
+              description: "Someone has responded to the valentine request!",
             });
           }
         }
       )
       .subscribe();
 
-    // Fetch existing response if any
-    const fetchResponse = async () => {
+    // Fetch existing responses
+    const fetchResponses = async () => {
       const { data } = await supabase
         .from('love_notes')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1);
+        .order('created_at', { ascending: false });
       
-      if (data && data.length > 0) {
-        const note = data[0];
-        if (note.response_type === 'yes' || note.response_type === 'thinking') {
-          setResponse(note as LoveNoteType);
-        }
+      if (data) {
+        const validResponses = data.filter(note => 
+          note.response_type === 'yes' || note.response_type === 'thinking'
+        ) as LoveNoteType[];
+        setResponses(validResponses);
       }
     };
 
-    fetchResponse();
+    fetchResponses();
 
     return () => {
       supabase.removeChannel(channel);
@@ -114,7 +112,7 @@ const Index = () => {
             No pressure, just me, hoping to spend this year's valentine's with someone pretty amazing. 😊
           </p>
 
-          {!response ? (
+          {responses.length === 0 && (
             <div className="space-y-4 md:space-y-0 md:space-x-4 animate-fade-in">
               <Button
                 onClick={handleYes}
@@ -131,19 +129,25 @@ const Index = () => {
                 {thinking ? "Pretty please? 🥺" : "Let me think... 🤔"}
               </Button>
             </div>
-          ) : (
-            <div className="mt-8 p-6 bg-pink-50 rounded-lg animate-fade-in">
-              <h3 className="script-font text-2xl text-pink-600 mb-2">Her Response:</h3>
-              <p className="text-lg text-gray-700">{response.content}</p>
-              <p className="text-sm text-gray-500 mt-2">
-                {new Date(response.created_at).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
+          )}
+
+          {responses.length > 0 && (
+            <div className="space-y-4">
+              {responses.map((response, index) => (
+                <div key={response.id || index} className="mt-8 p-6 bg-pink-50 rounded-lg animate-fade-in">
+                  <h3 className="script-font text-2xl text-pink-600 mb-2">Response:</h3>
+                  <p className="text-lg text-gray-700">{response.content}</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {new Date(response.created_at).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              ))}
             </div>
           )}
         </div>
