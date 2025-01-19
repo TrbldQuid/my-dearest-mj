@@ -8,4 +8,5 @@ export type LoveNote = {
   content: string;
   created_at: string;
   response_type: 'yes' | 'thinking';
+  is_special_person?: boolean;
 };

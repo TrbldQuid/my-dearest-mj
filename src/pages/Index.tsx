@@ -20,12 +20,15 @@ const Index = () => {
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'love_notes' },
         (payload) => {
-          const newNote = payload.new as LoveNoteType;
-          setResponse(newNote);
-          toast({
-            title: "She responded! 💌",
-            description: "Check her answer below!",
-          });
+          const newNote = payload.new as any;
+          // Validate response_type before setting state
+          if (newNote.response_type === 'yes' || newNote.response_type === 'thinking') {
+            setResponse(newNote as LoveNoteType);
+            toast({
+              title: "She responded! 💌",
+              description: "Check her answer below!",
+            });
+          }
         }
       )
       .subscribe();
@@ -39,7 +42,10 @@ const Index = () => {
         .limit(1);
       
       if (data && data.length > 0) {
-        setResponse(data[0]);
+        const note = data[0];
+        if (note.response_type === 'yes' || note.response_type === 'thinking') {
+          setResponse(note as LoveNoteType);
+        }
       }
     };
 
@@ -63,7 +69,7 @@ const Index = () => {
         .insert([
           {
             content: 'Said Yes! 💖',
-            response_type: 'yes'
+            response_type: 'yes' as const
           }
         ]);
 
@@ -82,7 +88,7 @@ const Index = () => {
         .insert([
           {
             content: 'Still thinking... 🤔',
-            response_type: 'thinking'
+            response_type: 'thinking' as const
           }
         ]);
     } catch (error) {
