@@ -5,10 +5,12 @@ import LoveNote from "@/components/LoveNote";
 import confetti from 'canvas-confetti';
 import { supabase } from '@/lib/supabase';
 import { useToast } from "@/components/ui/use-toast";
+import { LoveNote as LoveNoteType } from '@/lib/supabase';
 
 const Index = () => {
   const [showNote, setShowNote] = useState(false);
   const [thinking, setThinking] = useState(false);
+  const [response, setResponse] = useState<LoveNoteType | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -18,13 +20,30 @@ const Index = () => {
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'love_notes' },
         (payload) => {
+          const newNote = payload.new as LoveNoteType;
+          setResponse(newNote);
           toast({
-            title: "New Love Note! 💌",
-            description: "Someone just responded to your Valentine's request!",
+            title: "She responded! 💌",
+            description: "Check her answer below!",
           });
         }
       )
       .subscribe();
+
+    // Fetch existing response if any
+    const fetchResponse = async () => {
+      const { data } = await supabase
+        .from('love_notes')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (data && data.length > 0) {
+        setResponse(data[0]);
+      }
+    };
+
+    fetchResponse();
 
     return () => {
       supabase.removeChannel(channel);
@@ -89,22 +108,38 @@ const Index = () => {
             No pressure, just me, hoping to spend this year's valentine's with someone pretty amazing. 😊
           </p>
 
-          <div className="space-y-4 md:space-y-0 md:space-x-4 animate-fade-in">
-            <Button
-              onClick={handleYes}
-              className="bg-pink-500 hover:bg-pink-600 text-white px-8 py-4 text-lg rounded-full transform transition hover:scale-105"
-            >
-              Yes! ❤️
-            </Button>
-            
-            <Button
-              onClick={handleThinking}
-              variant="outline"
-              className="px-8 py-4 text-lg rounded-full border-pink-300"
-            >
-              {thinking ? "Pretty please? 🥺" : "Let me think... 🤔"}
-            </Button>
-          </div>
+          {!response ? (
+            <div className="space-y-4 md:space-y-0 md:space-x-4 animate-fade-in">
+              <Button
+                onClick={handleYes}
+                className="bg-pink-500 hover:bg-pink-600 text-white px-8 py-4 text-lg rounded-full transform transition hover:scale-105"
+              >
+                Yes! ❤️
+              </Button>
+              
+              <Button
+                onClick={handleThinking}
+                variant="outline"
+                className="px-8 py-4 text-lg rounded-full border-pink-300"
+              >
+                {thinking ? "Pretty please? 🥺" : "Let me think... 🤔"}
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-8 p-6 bg-pink-50 rounded-lg animate-fade-in">
+              <h3 className="script-font text-2xl text-pink-600 mb-2">Her Response:</h3>
+              <p className="text-lg text-gray-700">{response.content}</p>
+              <p className="text-sm text-gray-500 mt-2">
+                {new Date(response.created_at).toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+          )}
         </div>
 
         {showNote && <LoveNote />}
