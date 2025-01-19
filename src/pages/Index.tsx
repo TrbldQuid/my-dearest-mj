@@ -84,7 +84,7 @@ const Index = () => {
           
           <p className="sans-font text-lg md:text-xl mb-8 text-gray-700 animate-fade-in">
             My MJ,
-            It's been exactly 79 days since we started talking, 77 since we first met and shared our first kiss, but who's counting, right? Honestly, getting to know you has been one of the best parts of my days. And with Valentine's Day around the corner, I was wondering… would you make it even more special by being my valentine?
+            It's been exactly 80 days since we started talking, 77 since we first met and shared our first kiss, but who's counting, right? Honestly, getting to know you has been one of the best parts of my days. And with Valentine's Day around the corner, I was wondering… would you make it even more special by being my valentine?
 
             No pressure, just me, hoping to spend this year's valentine's with someone pretty amazing. 😊
           </p>
