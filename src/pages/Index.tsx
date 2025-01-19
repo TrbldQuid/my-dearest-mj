@@ -12,6 +12,9 @@ const Index = () => {
   const [thinking, setThinking] = useState(false);
   const [responses, setResponses] = useState<LoveNoteType[]>([]);
   const { toast } = useToast();
+  
+  // Get the current URL's search params to check if this is the special person
+  const isSpecialPerson = new URLSearchParams(window.location.search).get('for') === 'her';
 
   useEffect(() => {
     // Subscribe to real-time updates
@@ -23,27 +26,31 @@ const Index = () => {
           const newNote = payload.new as any;
           if (newNote.response_type === 'yes' || newNote.response_type === 'thinking') {
             setResponses(prev => [...prev, newNote as LoveNoteType]);
-            toast({
-              title: "New Response! 💌",
-              description: "Someone has responded to the valentine request!",
-            });
+            if (!isSpecialPerson) {
+              toast({
+                title: "She responded! 💌",
+                description: "Check her answer below!",
+              });
+            }
           }
         }
       )
       .subscribe();
 
-    // Fetch existing responses
+    // Only fetch responses if not the special person
     const fetchResponses = async () => {
-      const { data } = await supabase
-        .from('love_notes')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (data) {
-        const validResponses = data.filter(note => 
-          note.response_type === 'yes' || note.response_type === 'thinking'
-        ) as LoveNoteType[];
-        setResponses(validResponses);
+      if (!isSpecialPerson) {
+        const { data } = await supabase
+          .from('love_notes')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (data) {
+          const validResponses = data.filter(note => 
+            note.response_type === 'yes' || note.response_type === 'thinking'
+          ) as LoveNoteType[];
+          setResponses(validResponses);
+        }
       }
     };
 
@@ -52,7 +59,7 @@ const Index = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [toast]);
+  }, [toast, isSpecialPerson]);
 
   const handleYes = async () => {
     confetti({
@@ -67,7 +74,8 @@ const Index = () => {
         .insert([
           {
             content: 'Said Yes! 💖',
-            response_type: 'yes' as const
+            response_type: 'yes' as const,
+            is_special_person: true
           }
         ]);
 
@@ -86,7 +94,8 @@ const Index = () => {
         .insert([
           {
             content: 'Still thinking... 🤔',
-            response_type: 'thinking' as const
+            response_type: 'thinking' as const,
+            is_special_person: true
           }
         ]);
     } catch (error) {
@@ -112,7 +121,7 @@ const Index = () => {
             No pressure, just me, hoping to spend this year's valentine's with someone pretty amazing. 😊
           </p>
 
-          {responses.length === 0 && (
+          {isSpecialPerson && (
             <div className="space-y-4 md:space-y-0 md:space-x-4 animate-fade-in">
               <Button
                 onClick={handleYes}
@@ -131,11 +140,11 @@ const Index = () => {
             </div>
           )}
 
-          {responses.length > 0 && (
+          {!isSpecialPerson && responses.length > 0 && (
             <div className="space-y-4">
               {responses.map((response, index) => (
                 <div key={response.id || index} className="mt-8 p-6 bg-pink-50 rounded-lg animate-fade-in">
-                  <h3 className="script-font text-2xl text-pink-600 mb-2">Response:</h3>
+                  <h3 className="script-font text-2xl text-pink-600 mb-2">Her Response:</h3>
                   <p className="text-lg text-gray-700">{response.content}</p>
                   <p className="text-sm text-gray-500 mt-2">
                     {new Date(response.created_at).toLocaleDateString('en-US', {
